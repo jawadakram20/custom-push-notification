@@ -31,13 +31,14 @@ export async function POST(req) {
     };
 
     todos.push(newTodo);
-    // await fs.writeFile(filePath, JSON.stringify(todos, null, 2), "utf8");
+    await fs.writeFile(filePath, JSON.stringify(todos, null, 2));
 
     return new Response(JSON.stringify(newTodo), {
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: "Failed to add todo" }), {
+    console.log(error);
+    return new Response(JSON.stringify({ error }), {
       status: 500,
     });
   }
