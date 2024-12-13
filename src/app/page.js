@@ -61,8 +61,9 @@ export default function Home() {
         throw new Error(`Failed to add todo. Status: ${response.status}`);
       }
 
-      const newTodo = await response.json();
-      setTodos((prevTodos) => [...prevTodos, newTodo]);
+      const data = await response.json();
+      toast.success("Todo successfully added");
+
       setTask("");
     } catch (error) {
       console.log(`Error adding todo: ${error.message}`);

@@ -19,8 +19,6 @@ export async function GET() {
 export async function POST(req) {
   try {
     const { task } = await req.json();
-    const data = await fs.readFile(filePath, "utf8");
-    const todos = JSON.parse(data);
 
     const newTodo = {
       id: Date.now(),
@@ -30,15 +28,12 @@ export async function POST(req) {
       updated_at: new Date().toISOString(),
     };
 
-    todos.push(newTodo);
-    // await fs.writeFile(filePath, JSON.stringify(todos, null, 2));
-
-    return new Response(JSON.stringify(newTodo), {
+    return new Response(JSON.stringify({ success: true, data: newTodo }), {
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.log(error);
-    return new Response(JSON.stringify({ error }), {
+    console.error(error);
+    return new Response(JSON.stringify({ error: "Failed to process data" }), {
       status: 500,
     });
   }
