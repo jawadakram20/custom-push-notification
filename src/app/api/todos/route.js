@@ -31,7 +31,7 @@ export async function POST(req) {
     };
 
     todos.push(newTodo);
-    await fs.writeFile(filePath, JSON.stringify(todos, null, 2), "utf8");
+    // await fs.writeFile(filePath, JSON.stringify(todos, null, 2), "utf8");
 
     return new Response(JSON.stringify(newTodo), {
       headers: { "Content-Type": "application/json" },
