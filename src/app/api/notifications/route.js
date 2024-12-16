@@ -1,7 +1,8 @@
 import { MongoClient } from "mongodb";
 
 let db;
-const uri = process.env.MONGODB_URI;
+const uri =
+  "mongodb+srv://testjawad36:oJIkbdFVkjLPPoU5@pushnotification.mvtxd.mongodb.net/?retryWrites=true&w=majority&appName=pushNotification";
 
 async function connectDB() {
   if (db) return db;
