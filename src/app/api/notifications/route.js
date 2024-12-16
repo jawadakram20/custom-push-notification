@@ -13,27 +13,33 @@ async function connectDB() {
 }
 
 export async function GET(req) {
-  const tasksCollection = await (await connectDB()).collection("tasks");
-  const changeStream = tasksCollection.watch();
+  try {
+    const tasksCollection = await (await connectDB()).collection("tasks");
+    const changeStream = tasksCollection.watch();
 
-  const stream = new ReadableStream({
-    start(controller) {
-      changeStream.on("change", (change) => {
-        setTimeout(() => {
+    const stream = new ReadableStream({
+      start(controller) {
+        changeStream.on("change", (change) => {
           controller.enqueue(`data: ${JSON.stringify(change)}\n\n`);
-        }, 1000);
-      });
-    },
-    cancel() {
-      changeStream.close();
-    },
-  });
+        });
+      },
+      cancel() {
+        changeStream.close();
+      },
+    });
 
-  return new Response(stream, {
-    headers: {
-      "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache",
-      Connection: "keep-alive",
-    },
-  });
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+      },
+    });
+  } catch (error) {
+    console.error("Error in notification stream:", error);
+    return new Response(
+      JSON.stringify({ success: false, message: error.message }),
+      { status: 500 }
+    );
+  }
 }
