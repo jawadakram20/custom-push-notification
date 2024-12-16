@@ -20,6 +20,7 @@
     "react-toastify": "^10.0.6",
     "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",
+    "websocket": "^1.0.35",
     "ws": "^8.18.0"
   },
   "type": "module"

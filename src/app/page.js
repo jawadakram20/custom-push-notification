@@ -7,60 +7,93 @@ import "./globals.css";
 
 export default function Home() {
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState(null);
-  const [ws, setWs] = useState(null);
+  const [task, setTask] = useState("");
+  const [tasks, setTasks] = useState([]);
+
+  const fetchTasks = async () => {
+    try {
+      const response = await fetch("/api/todos");
+      if (response.ok) {
+        const data = await response.json();
+        setTasks(data.tasks);
+      }
+    } catch {
+      toast.error("Failed to fetch tasks");
+    }
+  };
 
   useEffect(() => {
-    const socket = new WebSocket("ws://localhost:3001");
+    const eventSource = new EventSource("/api/notifications");
 
-    socket.onopen = () => {
-      console.log("WebSocket connection established");
+    eventSource.onmessage = (event) => {
+      const change = JSON.parse(event.data);
+
+      if (change.operationType === "insert") {
+        toast.info(`Task added: ${change.fullDocument.task}`);
+      } else if (change.operationType === "delete") {
+        toast.info("Task removed");
+      }
+
+      fetchTasks();
     };
 
-    socket.onmessage = (event) => {
-      console.log("Message from server: ", event.data);
-      setMessage(event.data);
-      toast.success(event.data);
+    eventSource.onerror = () => {
+      toast.error("Failed to connect to notification stream.");
+      eventSource.close();
     };
 
-    setWs(socket);
+    fetchTasks();
 
     return () => {
-      if (socket) {
-        socket.close();
-      }
+      eventSource.close();
     };
   }, []);
 
   const addTodo = async () => {
-    const requestTime = new Date().toISOString();
-    console.log(`API called at: ${requestTime}`);
     setLoading(true);
+
+    if (!task.trim()) {
+      toast.error("Please enter a task.");
+      setLoading(false);
+      return;
+    }
 
     try {
       const response = await fetch("/api/todos", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
+        body: JSON.stringify({ task }),
       });
 
-      if (!response.ok) {
-        throw new Error(`Failed to add todo. Status: ${response.status}`);
+      if (response.ok) {
+        toast.success("Task added successfully");
+        setTask("");
+      } else {
+        throw new Error();
       }
+    } catch {
+      toast.error("Failed to add task");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      const newTodo = await response.json();
+  const deleteTodo = async (id) => {
+    setLoading(true);
+    try {
+      const response = await fetch("/api/todos", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
 
-      const responseTime = new Date().toISOString();
-      console.log(`API response received at: ${responseTime}`);
-      console.log("API Response:", newTodo);
-
-      if (ws) {
-        ws.send("API response received: Task received successfully");
+      if (response.ok) {
+        toast.success("Task deleted successfully");
+      } else {
+        throw new Error();
       }
-
-      toast.success("Successful");
-    } catch (error) {
-      console.log(`Error adding todo: ${error.message}`);
+    } catch {
+      toast.error("Failed to delete task");
     } finally {
       setLoading(false);
     }
@@ -69,10 +102,26 @@ export default function Home() {
   return (
     <div>
       <h1>Welcome to the Todo App</h1>
+      <input
+        type="text"
+        value={task}
+        onChange={(e) => setTask(e.target.value)}
+        placeholder="Enter a task"
+      />
       <button onClick={addTodo} disabled={loading}>
-        {loading ? "Processing..." : "Call the API"}
+        {loading ? "Processing" : "Add Task"}
       </button>
-      {message && <p>{message}</p>}
+      <h2>Tasks</h2>
+      <ul>
+        {tasks.map((task) =>
+          task && task._id ? (
+            <li key={task._id}>
+              <span>{task.task}</span>
+              <button onClick={() => deleteTodo(task._id)}>Delete</button>
+            </li>
+          ) : null
+        )}
+      </ul>
       <ToastContainer />
     </div>
   );
